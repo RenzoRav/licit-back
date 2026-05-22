@@ -1,0 +1,6 @@
+node_modules/
+.env
+src/config/firebase-service-account.json
+__MACOSX/
+.DS_Store
+*.log
