@@ -11,7 +11,7 @@ class QaService {
       .eq("id", conversationId)
       .single();
     if (convErr || !conv) {
-      throw Object.assign(new Error("Conversa não encontrada."), { status: 404 });
+      throw Object.assign(new Error("Conversa nao encontrada."), { status: 404 });
     }
 
     let contextContent = conv.contexts?.content || null;
@@ -29,15 +29,6 @@ class QaService {
           .update({ context_id: contextId, updated_at: new Date().toISOString() })
           .eq("id", conversationId);
       }
-    }
-
-    if (!contextContent) {
-      throw Object.assign(
-        new Error(
-          "Nenhum contexto vinculado a esta conversa. Selecione um arquivo de contexto antes de perguntar."
-        ),
-        { status: 422 }
-      );
     }
 
     return { conversation: conv, contextContent };
@@ -58,12 +49,16 @@ class QaService {
   async callPythonApi(question, contextContent, timeoutMs = 900_000) {
     const fetch = (await import("node-fetch")).default;
     const startTime = Date.now();
-    console.log(`[QA] Iniciando requisição para Python API...`);
+    console.log(`[QA] Iniciando requisicao para Python API...`);
+
+    const body = contextContent
+      ? { text: question.trim(), context: contextContent }
+      : { text: question.trim(), context: "" };
 
     const pyRes = await fetch(`${PYTHON_API_URL}/qa`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: question.trim(), context: contextContent }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
 
@@ -82,7 +77,7 @@ class QaService {
     let message = error.message;
     if (error.type === "aborted" || error.message?.includes("aborted")) {
       message =
-        "Tempo limite excedido (15 min). O modelo está muito lento. Tente com um contexto menor.";
+        "Tempo limite excedido (15 min). O modelo esta muito lento. Tente com um contexto menor.";
     }
     console.error(`[QA] Erro ao chamar Python API:`, error);
     await supabase.from("messages").insert({
@@ -119,10 +114,10 @@ class QaService {
 
   async ask({ question, conversationId, contextId }) {
     if (!question?.trim()) {
-      throw Object.assign(new Error("question não pode ser vazio."), { status: 400 });
+      throw Object.assign(new Error("question nao pode ser vazio."), { status: 400 });
     }
     if (!conversationId) {
-      throw Object.assign(new Error("conversation_id é obrigatório."), { status: 400 });
+      throw Object.assign(new Error("conversation_id e obrigatorio."), { status: 400 });
     }
 
     const { contextContent } = await this.getConversationWithContext(conversationId, contextId);
@@ -146,7 +141,7 @@ class QaService {
   async resend({ messageId, newQuestion, conversationId }) {
     if (!messageId || !newQuestion?.trim() || !conversationId) {
       throw Object.assign(
-        new Error("message_id, new_question e conversation_id são obrigatórios."),
+        new Error("message_id, new_question e conversation_id sao obrigatorios."),
         { status: 400 }
       );
     }
@@ -180,7 +175,7 @@ class QaService {
 
   async simpleAsk({ question, context }) {
     if (!question?.trim()) {
-      throw Object.assign(new Error("question não pode ser vazio."), { status: 400 });
+      throw Object.assign(new Error("question nao pode ser vazio."), { status: 400 });
     }
 
     const fetch = (await import("node-fetch")).default;

@@ -9,24 +9,14 @@ class MessageService {
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return data;
+    return data || [];
   }
 
   async create(conversationId, { role, content }) {
-    const { error: convErr } = await supabase
-      .from("conversations")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", conversationId);
-    if (convErr) throw convErr;
-
+    await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     const { data, error } = await supabase
       .from("messages")
-      .insert({
-        id: uuidv4(),
-        conversation_id: conversationId,
-        role,
-        content: content.trim(),
-      })
+      .insert({ id: uuidv4(), conversation_id: conversationId, role, content: content.trim() })
       .select()
       .single();
     if (error) throw error;
@@ -46,20 +36,13 @@ class MessageService {
   }
 
   async deleteOne(conversationId, messageId) {
-    const { error } = await supabase
-      .from("messages")
-      .delete()
-      .eq("id", messageId)
-      .eq("conversation_id", conversationId);
+    const { error } = await supabase.from("messages").delete().eq("id", messageId).eq("conversation_id", conversationId);
     if (error) throw error;
     return { deleted: true };
   }
 
   async deleteAll(conversationId) {
-    const { error } = await supabase
-      .from("messages")
-      .delete()
-      .eq("conversation_id", conversationId);
+    const { error } = await supabase.from("messages").delete().eq("conversation_id", conversationId);
     if (error) throw error;
     return { deleted: true };
   }
